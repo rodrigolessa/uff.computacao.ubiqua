@@ -1,4 +1,5 @@
-include <Javino.h>
+#include <Javino.h>
+
 Javino j;
 
 int pinoLDR = A0; // pino de entrada do sensor de limunosidade
@@ -10,13 +11,16 @@ int tempWarning = 40; // temperatura superior ao normal
 int tempDanger = 60; // temperatura de incêndio
 int i = 0;
 
+int pwmValue = 2;
+int pwmMax = 10;
+
 void setup() {
+  Serial.begin(9600);
   pinMode(pinoLDR, INPUT); // declarando pino de entrada
   pinMode(pinoLED, OUTPUT); // declarando pino de saída
-  Serial.begin(9600);
 }
 
-void loop() {
+void loop() {  
   if (j.availablemsg()){
     actions(j.getmsg());
   }
@@ -27,7 +31,7 @@ void loop() {
 void actions(String msg){
   
   // Verificando luminosidade
-  if (msg == "readLum"){
+  if (msg == "readlum"){
     
     lum = 0;
     
@@ -38,7 +42,8 @@ void actions(String msg){
   
     lum = lum / 3;
     
-    Serial.println(lum); // exibindo no console a resistencia do sensor LDR
+    //Serial.println(lum); // exibindo no console a resistencia do sensor LDR
+    j.sendmsg(lum);
   
     if (lum > 800){
       digitalWrite(pinoLED, LOW); // muito claro, desligar o LED
@@ -49,13 +54,14 @@ void actions(String msg){
   }
 
   // Verificando temperatura
-  if (msg == "readLum"){
+  if (msg == "readtemp"){
 
     temp = analogRead(pinoTemp); // lendo temperatura
     temp = temp * 0.488; // convertendo °C 
   
-    Serial.print(temp);
+    //Serial.print(temp);
     //Serial.println(" °C");  // exbindo somente para testes
+    j.sendmsg(temp);
   }
   
 }
