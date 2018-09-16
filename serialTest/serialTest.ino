@@ -1,10 +1,6 @@
 int pinoLDR = A0; // pino de entrada do sensor de limunosidade
 int pinoLED = 2; // pino de saída do LED vermelho
-int pinoTemp = A1; // pino de entrada do sensor de temperatura
 int lum = 0; // armazenar o valor lido do LDR
-int temp = 20; // temperatura inicial em ºC
-int tempWarning = 40; // temperatura superior ao normal
-int tempDanger = 60; // temperatura de incêndio
 int i = 0;
 
 void setup() {
@@ -29,7 +25,7 @@ void handleSerial() {
         
         for (i = 0; i < 3; i = i + 1){
           lum = lum + analogRead(pinoLDR); // lendo o sensor
-          delay(200);
+          delay(100);
         }
       
         lum = lum / 3;
@@ -38,18 +34,14 @@ void handleSerial() {
       
         if (lum > 800){
           digitalWrite(pinoLED, LOW); // muito claro, desligar o LED
-        }
-        if (lum < 400){
+        } else if (lum < 400){
           digitalWrite(pinoLED, HIGH); // ligar o LED
         }
+        
         break;
         
       case '-':
-        temp = analogRead(pinoTemp); // lendo temperatura
-        temp = temp * 0.488; // convertendo °C 
-      
-        Serial.print(temp);
-        //Serial.println(" °C");  // exbindo somente para testes
+        Serial.println("Test...");  // exbindo somente para testes
         break;
     }
   }
