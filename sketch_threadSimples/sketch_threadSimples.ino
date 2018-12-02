@@ -2,7 +2,7 @@
 #include <Thread.h>
 #include <ThreadController.h>
 
-int ledPin = 13;
+int ledPin = 7;
 
 //My simple Thread
 Thread myThread = Thread();
@@ -35,4 +35,7 @@ void loop(){
   // Other code...
   int x = 0;
   x = 1 + 2;
+
+  Serial.println(x);
+  delay(400);
 }
