@@ -20,12 +20,12 @@
 // Definindo pinos (digitais) para atuadores
 
 #define ledWarning  7  // D7
-//#define pinoFT      9  // D9  ~ pwm
-//#define pinoLDR     10 // D10 ~ pwm
-//#define pinServo    11 // D11 ~ pwm
+//#define pinoFT    ?9  // D9  ~ pwm
+//#define pinoLDR   ?10 // D10 ~ pwm
+//#define pinServo  ?11 // D11 ~ pwm
 #define pinBuzzer   12 // D12
 #define pinBtnPanic 4 // D4
-//#define pinBtn      8 // D8
+//#define pinBtn    ?8 // D8
 
 // Definindo pinos para sensores
 
@@ -34,6 +34,9 @@
 
 #define pinTRIGGERBase   9  // D9 - Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define pinECHOBase     10  // D10 ~ pwm - Arduino pin tied to echo pin on the ultrasonic sensor.
+
+const int pinoRX =  8; //  8 pino digital (RX)
+const int pinoTX = 11; // 11 ~ pwm (TX)
 
 // Alguns pinos têm capacidades especiais. 
 // Por exemplo, os pinos digitais 3, 5, 6, 9, 10 e 11, no Arduino Nano, 
@@ -88,6 +91,8 @@ Ultrasonic ultrasonicBase(pinTRIGGERBase, pinECHOBase);
 
 // Instância servo motor
 //Servo servo;
+
+SoftwareSerial bluetooth(pinoRX, pinoTX);
 
 //Cria uma instancia do MMA8452 chamada acelerometro
 //com endereco I2C 0x1C (pino SA0 em LOW/Desligado)
@@ -251,7 +256,7 @@ void ActionButtonCallback(){
   // Botões de ação - Pânico
   if (digitalRead(pinBtnPanic) == 1){
     //Serial.print("PanicButton:true");
-    Serial.print("p");
+    bluetooth.print("p");
     //Standby(true);
     tone(pinBuzzer, buzzFrequence, buzzDuration * 5);
   }
@@ -306,7 +311,7 @@ void objectWarning(float distance) {
       tone(pinBuzzer, buzzFrequence, buzzDuration);
 
       //Serial.println("Ultrasonic:perto");
-      Serial.println("s");
+      bluetooth.print("s");
 
       float distanceCheck = medianDistance();
     
@@ -326,7 +331,7 @@ void objectWarning(float distance) {
       tone(pinBuzzer, buzzFrequence, buzzDuration);
 
       //Serial.println("Ultrasonic:medio");
-      Serial.println("s");
+      bluetooth.print("s");
 
       float distanceCheck = medianDistance();
     
@@ -340,7 +345,7 @@ void objectWarning(float distance) {
       tone(pinBuzzer, buzzFrequence, buzzDuration / 2);
       
       //Serial.println("Ultrasonic:longe");
-      Serial.println("s");
+      bluetooth.print("s");
     }
   }
 }
@@ -391,6 +396,26 @@ void Standby(bool action) {
 
 void handleSerial() {
 
+  if(bluetooth.available()){
+
+    char toothChar = bluetooth.read();
+
+    if (toothChar == '+') {
+      // Localizador da bengala
+      tone(pinBuzzer, 1500);
+      delay(250);
+      noTone(pinBuzzer);
+      delay(250);
+      tone(pinBuzzer, 1500);
+      delay(250);
+      noTone(pinBuzzer);
+      delay(250);
+      tone(pinBuzzer, 1500);
+      delay(250);
+      noTone(pinBuzzer);
+    }
+  }
+
   //while (Serial.available() > 0) {
   if (Serial.available() > 0) {
     
@@ -399,18 +424,6 @@ void handleSerial() {
     switch (incomingChar) {
       case '+':
         //Standby(false);
-        // Localizador da bengala
-        tone(pinBuzzer, 1500);
-        delay(250);
-        noTone(pinBuzzer);
-        delay(250);
-        tone(pinBuzzer, 1500);
-        delay(250);
-        noTone(pinBuzzer);
-        delay(250);
-        tone(pinBuzzer, 1500);
-        delay(250);
-        noTone(pinBuzzer);
         break;
       case '-':
         //Standby(true);
@@ -425,6 +438,8 @@ void handleSerial() {
 void setup() {
   
   Serial.begin(9600);
+
+  bluetooth.begin(9600);
 
   //pinMode(pinoLDR, INPUT); // declarando pino de entrada
   pinMode(ledWarning, OUTPUT); // declarando pino de saída
@@ -516,22 +531,22 @@ void loop() {
 
 void printAccels()
 {
-  Serial.print(acelerometro.x, 3);
-  Serial.print("\t");
-  Serial.print(acelerometro.y, 3);
-  Serial.print("\t");
-  Serial.print(acelerometro.z, 3);
-  Serial.print("\t");
+  //Serial.print(acelerometro.x, 3);
+  //Serial.print("\t");
+  //Serial.print(acelerometro.y, 3);
+  //Serial.print("\t");
+  //Serial.print(acelerometro.z, 3);
+  //Serial.print("\t");
 }
 
 void printCalculatedAccels()
 { 
-  Serial.print(acelerometro.cx, 3);
-  Serial.print("\t");
-  Serial.print(acelerometro.cy, 3);
-  Serial.print("\t");
-  Serial.print(acelerometro.cz, 3);
-  Serial.print("\t");
+  //Serial.print(acelerometro.cx, 3);
+  //Serial.print("\t");
+  //Serial.print(acelerometro.cy, 3);
+  //Serial.print("\t");
+  //Serial.print(acelerometro.cz, 3);
+  //Serial.print("\t");
 }
 
 void printOrientation()
@@ -544,26 +559,26 @@ void printOrientation()
   byte pl = acelerometro.readPL();
   switch (pl)
   {
-  case PORTRAIT_U:
-    //Serial.print("Retrato Para Cima");
-    Serial.print("cima");
-    break;
-  case PORTRAIT_D:
-    //Serial.print("Retrato Para Baixo");
-    Serial.print("baixo");
-    break;
-  case LANDSCAPE_R:
-    //Serial.print("Paisagem Direita");
-    Serial.print("direita");
-    break;
-  case LANDSCAPE_L:
-    //Serial.print("Paisagem Esquerda");
-    Serial.print("esquerda");
-    break;
-  case LOCKOUT:
-    //Serial.print("Plano");
-    // Avisar sobre queda da bengala
-    Serial.println("q");
-    break;
+    case PORTRAIT_U:
+      //Serial.print("Retrato Para Cima");
+      bluetooth.print("cima");
+      break;
+    case PORTRAIT_D:
+      //Serial.print("Retrato Para Baixo");
+      bluetooth.print("baixo");
+      break;
+    case LANDSCAPE_R:
+      //Serial.print("Paisagem Direita");
+      bluetooth.print("direita");
+      break;
+    case LANDSCAPE_L:
+      //Serial.print("Paisagem Esquerda");
+      bluetooth.print("esquerda");
+      break;
+    case LOCKOUT:
+      //Serial.print("Plano");
+      // Avisar sobre queda da bengala
+      bluetooth.println("q");
+      break;
   }
 }
