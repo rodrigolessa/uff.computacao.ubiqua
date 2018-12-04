@@ -2,22 +2,24 @@
 // Bibliotecas
 
 #include <SoftwareSerial.h>
-#include <Servo.h>
+//#include <Servo.h>
 #include <Ultrasonic.h>
 #include <StaticThreadController.h>
 #include <Thread.h>
 #include <ThreadController.h>
+#include <Wire.h>
+#include <SparkFun_MMA8452Q.h>
 
 /////////////////////////////////////////////////
 // Definindo pinos (digitais) para atuadores
 
 #define ledWarning  7  // D7
-#define pinoFT      9  // D9  ~ pwm
-#define pinoLDR     10 // D10 ~ pwm
-#define pinServo    11 // D11 ~ pwm
+//#define pinoFT      9  // D9  ~ pwm
+//#define pinoLDR     10 // D10 ~ pwm
+//#define pinServo    11 // D11 ~ pwm
 #define pinBuzzer   12 // D12
 #define pinBtnPanic 4 // D4
-#define pinBtn      8 // D8
+//#define pinBtn      8 // D8
 
 // Definindo pinos para sensores
 
@@ -41,7 +43,7 @@
 // 29ms should be the shortest delay between pings.
 
 // Medidas em centimetros
-float longe = 100;
+float longe = 120;
 float medio = 60;
 float perto = 30;
 
@@ -74,7 +76,11 @@ bool standby = false;
 Ultrasonic ultrasonic(pinTRIGGER, pinECHO);
 
 // Instância servo motor
-Servo servo;
+//Servo servo;
+
+//Cria uma instancia do MMA8452 chamada acelerometro
+//com endereco I2C 0x1C (pino SA0 em LOW/Desligado)
+MMA8452Q acelerometro(0x1C);
 
 /////////////////////////////////////////////////
 // ThreadController that will controll all threads
@@ -84,14 +90,14 @@ ThreadController conthrol = ThreadController();
 Thread ultrasonicReading = Thread();
 
 // Thread to control infrared sensor (not pointer)
-Thread infraredReading = Thread();
+//Thread infraredReading = Thread();
 
 // Thread to control actions buttons (not pointer)
 Thread ButtonReading = Thread();
 
 // Servo controller
-int direcao = 1;
-int posicao = servoAngleInit;
+//int direcao = 1;
+//int posicao = servoAngleInit;
 
 // Callback for ultrasonicReading
 void ultrasonicCallback() {
@@ -111,20 +117,36 @@ void ultrasonicCallback() {
       //delay(intFrequence);
     //}
   
-    if (posicao >= servoAngleMax){
-      direcao = 0;
-    } else if (posicao <= servoAngleInit){
-      direcao = 1;
-    }
+    //if (posicao >= servoAngleMax){
+      //direcao = 0;
+    //} else if (posicao <= servoAngleInit){
+      //direcao = 1;
+    //}
   
-    if (direcao == 1){
-      posicao = posicao + 1;
-    } else {
-      posicao = posicao - 1;
-    }
+    //if (direcao == 1){
+      //posicao = posicao + 1;
+    //} else {
+      //posicao = posicao - 1;
+    //}
     
-    servo.write(posicao);
-    objectWarning(medianDistance());
+    //servo.write(posicao);
+    //objectWarning(medianDistance());
+
+    float d1 = ultrasonic.distanceRead();
+    delay(5);
+  
+    float d2 = ultrasonic.distanceRead();
+    delay(5);
+  
+    float d3 = ultrasonic.distanceRead();
+    delay(5);
+  
+    float d4 = ultrasonic.distanceRead();
+  
+    float total = d1 + d2 + d3 + d4;
+    float distance = total / 4;
+
+    objectWarning(distance);
 
   }
 
@@ -140,25 +162,25 @@ void infraredCallback(){
     // Armazenar o valor lido do LDR
     //int lum1 = analogRead(pinoLDR);
     // Valor lido pelo fototransistor do sensor Infrared
-    int infr1 = digitalRead(pinoFT);
-    delay(25);
+    //int infr1 = digitalRead(pinoFT);
+    //delay(25);
     
     //int lum2 = analogRead(pinoLDR);
-    int infr2 = digitalRead(pinoFT);
-    delay(25);
+    //int infr2 = digitalRead(pinoFT);
+    //delay(25);
     
     //int lum3 = analogRead(pinoLDR);
-    int infr3 = digitalRead(pinoFT);
-    delay(25);
+    //int infr3 = digitalRead(pinoFT);
+    //delay(25);
     
     //int lum4 = analogRead(pinoLDR);
-    int infr4 = digitalRead(pinoFT);
+    //int infr4 = digitalRead(pinoFT);
   
     //int lumTotal = lum1 + lum2 + lum3 + lum4;
-    int infTotal = infr1 + infr2 + infr3 + infr4;
+    //int infTotal = infr1 + infr2 + infr3 + infr4;
   
     //float lumMedia = lumTotal / 4;
-    float infMedia = infTotal / 4;
+    //float infMedia = infTotal / 4;
         
     //Serial.print("Luminosidade: "); // exibindo no console a resistencia do sensor LDR
     //Serial.println(lumMedia); // exibindo no console a resistencia do sensor LDR
@@ -167,11 +189,11 @@ void infraredCallback(){
     //Serial.println(infMedia);
   
     // Verifica se o objeto foi detectado 
-    if (infMedia != 1)
-    {
+    //if (infMedia != 1)
+    //{
       //Serial.println("Objeto: Detectado");
-      Serial.println("Infrared:true");
-    }
+      //Serial.println("Infrared:true");
+    //}
 
   }
 
@@ -184,17 +206,18 @@ void ActionButtonCallback(){
 
   // Botões de ação - Pânico
   if (digitalRead(pinBtnPanic) == 1){
-    Serial.print("PanicButton:true");
-    Standby(true);
+    //Serial.print("PanicButton:true");
+    Serial.print("p");
+    //Standby(true);
     tone(pinBuzzer, buzzFrequence, buzzDuration * 5);
   }
 
   // Botões de ação - Reiniciar
-  if (digitalRead(pinBtn) == 1){
-    Serial.print("RebootButton:true");
-    Standby(false);
-    noTone(pinBuzzer);
-  }
+  //if (digitalRead(pinBtn) == 1){
+    //Serial.print("RebootButton:true");
+    //Standby(false);
+    //noTone(pinBuzzer);
+  //}
 }
 
 /////////////////////////////////////////////////
@@ -234,7 +257,8 @@ void objectWarning(float distance) {
       
       tone(pinBuzzer, buzzFrequence, buzzDuration);
 
-      Serial.println("Ultrasonic:perto");
+      //Serial.println("Ultrasonic:perto");
+      Serial.println("s");
 
       float distanceCheck = medianDistance();
     
@@ -253,7 +277,8 @@ void objectWarning(float distance) {
       
       tone(pinBuzzer, buzzFrequence, buzzDuration);
 
-      Serial.println("Ultrasonic:medio");
+      //Serial.println("Ultrasonic:medio");
+      Serial.println("s");
 
       float distanceCheck = medianDistance();
     
@@ -266,7 +291,8 @@ void objectWarning(float distance) {
       
       tone(pinBuzzer, buzzFrequence, buzzDuration / 2);
       
-      Serial.println("Ultrasonic:longe");
+      //Serial.println("Ultrasonic:longe");
+      Serial.println("s");
     }
   }
 }
@@ -276,22 +302,22 @@ void objectWarning(float distance) {
 
 void moveTo(int servoAngle) {
   
-  int currentPosition = servo.read();
+  //int currentPosition = servo.read();
 
   //Serial.print("Posição: ");
   //Serial.println(currentPosition);
   
-  if (currentPosition > servoAngle) {
-    for (int i = currentPosition; i > servoAngle; i--) {
-      servo.write(i);
-      delay(intFrequence / 2);
-    }
-  } else if (currentPosition < servoAngle) {
-    for (int i = currentPosition; i <= servoAngle; i++){
-      servo.write(i);
-      delay(intFrequence / 2);
-    }
-  }
+  //if (currentPosition > servoAngle) {
+    //for (int i = currentPosition; i > servoAngle; i--) {
+      //servo.write(i);
+      //delay(intFrequence / 2);
+    //}
+  //} else if (currentPosition < servoAngle) {
+    //for (int i = currentPosition; i <= servoAngle; i++){
+      //servo.write(i);
+      //delay(intFrequence / 2);
+    //}
+  //}
 }
 
 /////////////////////////////////////////////////
@@ -300,15 +326,15 @@ void moveTo(int servoAngle) {
 void Standby(bool action) {
   
   if (action == true){
-    standby = true;
-    Serial.println("Standbying...");  // exbindo somente para testes
+    //standby = true;
+    //Serial.println("Standbying...");  // exbindo somente para testes
     //digitalWrite(ledWarning, LOW); // desligar o LED
     //noTone(pinBuzzer); // Desligar o alerta
     //moveTo(servoAngleMax);
     
   } else if (action == false){
-    standby = false;
-    Serial.println("Restarting...");  // exbindo somente para testes
+    //standby = false;
+    //Serial.println("Restarting...");  // exbindo somente para testes
   }
 }
 
@@ -324,10 +350,22 @@ void handleSerial() {
 
     switch (incomingChar) {
       case '+':
-        Standby(false);
+        //Standby(false);
+        // Localizador da bengala
+        tone(pinBuzzer, 1500);
+        delay(250);
+        noTone(pinBuzzer);
+        delay(250);
+        tone(pinBuzzer, 1500);
+        delay(250);
+        noTone(pinBuzzer);
+        delay(250);
+        tone(pinBuzzer, 1500);
+        delay(250);
+        noTone(pinBuzzer);
         break;
       case '-':
-        Standby(true);
+        //Standby(true);
         break;
     }
   }
@@ -340,31 +378,44 @@ void setup() {
   
   Serial.begin(9600);
 
-  pinMode(pinoLDR, INPUT); // declarando pino de entrada
+  //pinMode(pinoLDR, INPUT); // declarando pino de entrada
   pinMode(ledWarning, OUTPUT); // declarando pino de saída
   pinMode(pinBuzzer, OUTPUT);
-  pinMode(pinoFT, INPUT); //Pino ligado ao coletor do fototransistor
+  //pinMode(pinoFT, INPUT); //Pino ligado ao coletor do fototransistor
   pinMode(pinBtnPanic, INPUT);
-  pinMode(pinBtn, INPUT);
+  //pinMode(pinBtn, INPUT);
 
   // Iniciar motor servo e reposicionar
-  servo.attach(pinServo);
+  //servo.attach(pinServo);
 
-  moveTo(servoAngleInit);
+  //Inicializa o acelerometro com o valores padrao de +/-2g e
+  //saida de 800 Hz
+  acelerometro.init();
+  //Utilize a linha abaixo para inicializar o acelerometro com
+  //+/-2g, 4g, or 8g, usando SCALE_2G, SCALE_4G, ou SCALE_8G
+  //acelerometro.init(SCALE_4G);
+  //Utilize a linha abaixo para determinar tambem a frequencia
+  //de saida do acelerometro (padrao de 800 Hz), utilizando
+  //como segundo parametro ODR_800 (800 Hz), ODR_400 (400 Hz),
+  //ODR_200 (200 Hz), ODR_100 (100 Hz), ODR_50 (50 Hz),
+  //ODR_12 (12.5 Hz), ODR_6 (6.25 Hz), ou ODR_1 (1.56 Hz)  
+  //acelerometro.init(SCALE_8G, ODR_6);
+
+  //moveTo(servoAngleInit);
 
   // Configure threads
   ultrasonicReading.onRun(ultrasonicCallback);
   ultrasonicReading.setInterval(5);
 
-  infraredReading.onRun(infraredCallback);
-  infraredReading.setInterval(100);
+  //infraredReading.onRun(infraredCallback);
+  //infraredReading.setInterval(100);
 
   ButtonReading.onRun(ActionButtonCallback);
   ButtonReading.setInterval(100);
 
   // Adds both threads to the controller
   conthrol.add(&ultrasonicReading);
-  conthrol.add(&infraredReading); // & to pass the pointer to it
+  //conthrol.add(&infraredReading); // & to pass the pointer to it
   conthrol.add(&ButtonReading); // & to pass the pointer to it
 }
 
@@ -384,5 +435,83 @@ void loop() {
     digitalWrite(ledWarning, HIGH); // ligar o LED
   } else {
     digitalWrite(ledWarning, LOW); // desligar o LED
+  }
+
+  //A linha abaixo aguarda o envio de novos dados pelo acelerometro
+  if (acelerometro.available())
+  {
+    //Efetua a leitura dos dados do sensor
+    acelerometro.read();
+    //acelerometro.read() atualiza dois grupos de variaveis:
+    //* int x, y, e z armazena o valor de 12 bits lido do
+    //acelerometro
+    // * float cx, cy, e cz armazena o calculo da aceleracao
+    //dos valores de 12 bits. Essas variaveis estao em
+    //unidades de "g"
+    
+    //Mostra as coordenadas lidas do sensor
+    printCalculatedAccels();
+    
+    //Selecione a linha abaixo para mostra os valores digitais
+    //printAccels();
+    
+    //Mostra a orientacao (retrato/paisagem/flat)
+    printOrientation();
+    //Serial.println();
+  }
+}
+
+
+void printAccels()
+{
+  Serial.print(acelerometro.x, 3);
+  Serial.print("\t");
+  Serial.print(acelerometro.y, 3);
+  Serial.print("\t");
+  Serial.print(acelerometro.z, 3);
+  Serial.print("\t");
+}
+
+void printCalculatedAccels()
+{ 
+  Serial.print(acelerometro.cx, 3);
+  Serial.print("\t");
+  Serial.print(acelerometro.cy, 3);
+  Serial.print("\t");
+  Serial.print(acelerometro.cz, 3);
+  Serial.print("\t");
+}
+
+void printOrientation()
+{
+  //acelerometro.readPL() retorna um byte contendo informacoes sobre
+  //a orientacao do sensor (retrato/paisagem)
+  //PORTRAIT_U (Retrato Up/Para cima), PORTRAIT_D (Retrato Down/Para Baixo), 
+  //LANDSCAPE_R (Paisagem right/direita), LANDSCAPE_L (Paisagem left/esquerda)
+  //e LOCKOUT (bloqueio)
+  byte pl = acelerometro.readPL();
+  switch (pl)
+  {
+  case PORTRAIT_U:
+    //Serial.print("Retrato Para Cima");
+    Serial.print("cima");
+    break;
+  case PORTRAIT_D:
+    //Serial.print("Retrato Para Baixo");
+    Serial.print("baixo");
+    break;
+  case LANDSCAPE_R:
+    //Serial.print("Paisagem Direita");
+    Serial.print("direita");
+    break;
+  case LANDSCAPE_L:
+    //Serial.print("Paisagem Esquerda");
+    Serial.print("esquerda");
+    break;
+  case LOCKOUT:
+    //Serial.print("Plano");
+    // Avisar sobre queda da bengala
+    Serial.println("q");
+    break;
   }
 }
