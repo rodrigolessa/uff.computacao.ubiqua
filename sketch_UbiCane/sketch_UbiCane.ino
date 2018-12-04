@@ -3,11 +3,17 @@
 
 #include <SoftwareSerial.h>
 //#include <Servo.h>
+// https://github.com/ErickSimoes/Ultrasonic
+// By Erick Simões
 #include <Ultrasonic.h>
 #include <StaticThreadController.h>
+// https://github.com/ivanseidel/ArduinoThread
+// By Ivan Seidel
 #include <Thread.h>
 #include <ThreadController.h>
 #include <Wire.h>
+// https://github.com/sparkfun/SparkFun_MMA8452Q_Arduino_Library
+// By Jim@SparkFun
 #include <SparkFun_MMA8452Q.h>
 
 /////////////////////////////////////////////////
@@ -25,6 +31,9 @@
 
 #define pinTRIGGER  2  // D2 - Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define pinECHO     5  // D5 ~ pwm - Arduino pin tied to echo pin on the ultrasonic sensor.
+
+#define pinTRIGGERBase   9  // D9 - Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define pinECHOBase     10  // D10 ~ pwm - Arduino pin tied to echo pin on the ultrasonic sensor.
 
 // Alguns pinos têm capacidades especiais. 
 // Por exemplo, os pinos digitais 3, 5, 6, 9, 10 e 11, no Arduino Nano, 
@@ -75,6 +84,8 @@ bool standby = false;
 // Instância o sensor de distância com pinos PWN
 Ultrasonic ultrasonic(pinTRIGGER, pinECHO);
 
+Ultrasonic ultrasonicBase(pinTRIGGERBase, pinECHOBase);
+
 // Instância servo motor
 //Servo servo;
 
@@ -88,6 +99,8 @@ ThreadController conthrol = ThreadController();
 
 // Thread to control servo and ultrasonic sensor (not pointer)
 Thread ultrasonicReading = Thread();
+
+Thread ultrasonicBaseReading = Thread();
 
 // Thread to control infrared sensor (not pointer)
 //Thread infraredReading = Thread();
@@ -132,16 +145,24 @@ void ultrasonicCallback() {
     //servo.write(posicao);
     //objectWarning(medianDistance());
 
-    float d1 = ultrasonic.distanceRead();
+    // This method is deprecated, use read() instead. [-Wdeprecated-declarations]
+    //float d1 = ultrasonic.distanceRead();
+    float d1 = ultrasonic.read();
     delay(5);
-  
-    float d2 = ultrasonic.distanceRead();
+
+    // This method is deprecated, use read() instead. [-Wdeprecated-declarations]
+    //float d2 = ultrasonic.distanceRead();
+    float d2 = ultrasonic.read();
     delay(5);
-  
-    float d3 = ultrasonic.distanceRead();
+
+    // This method is deprecated, use read() instead. [-Wdeprecated-declarations]
+    //float d3 = ultrasonic.distanceRead();
+    float d3 = ultrasonic.read();
     delay(5);
-  
-    float d4 = ultrasonic.distanceRead();
+
+    // This method is deprecated, use read() instead. [-Wdeprecated-declarations]
+    //float d4 = ultrasonic.distanceRead();
+    float d4 = ultrasonic.read();
   
     float total = d1 + d2 + d3 + d4;
     float distance = total / 4;
@@ -152,6 +173,29 @@ void ultrasonicCallback() {
 
   //Serial.print("Ultrasonic. I'm running on: ");
   //Serial.println(millis());
+}
+
+// Callback for ultrasonicBaseReading
+void ultrasonicBaseCallback() {
+  
+  if (standby == false) {
+    
+    float d1 = ultrasonicBase.read();
+    delay(5);
+  
+    float d2 = ultrasonicBase.read();
+    delay(5);
+  
+    float d3 = ultrasonicBase.read();
+    delay(5);
+  
+    float d4 = ultrasonicBase.read();
+  
+    float total = d1 + d2 + d3 + d4;
+    float distance = total / 4;
+
+    objectWarning(distance);
+  }
 }
 
 // Callback
@@ -225,16 +269,20 @@ void ActionButtonCallback(){
 
 float medianDistance() {
 
-  float d1 = ultrasonic.distanceRead();
+  //Ultrasonic::distanceRead(uint8_t)' is deprecated: This method is deprecated, use read() instead.
+  float d1 = ultrasonic.read();
   delay(5);
 
-  float d2 = ultrasonic.distanceRead();
+  //Ultrasonic::distanceRead(uint8_t)' is deprecated: This method is deprecated, use read() instead.
+  float d2 = ultrasonic.read();
   delay(5);
 
-  float d3 = ultrasonic.distanceRead();
+  //Ultrasonic::distanceRead(uint8_t)' is deprecated: This method is deprecated, use read() instead.
+  float d3 = ultrasonic.read();
   delay(5);
 
-  float d4 = ultrasonic.distanceRead();
+  //Ultrasonic::distanceRead(uint8_t)' is deprecated: This method is deprecated, use read() instead.
+  float d4 = ultrasonic.read();
 
   float total = d1 + d2 + d3 + d4;
   float distance = total / 4;
@@ -407,6 +455,9 @@ void setup() {
   ultrasonicReading.onRun(ultrasonicCallback);
   ultrasonicReading.setInterval(5);
 
+  ultrasonicBaseReading.onRun(ultrasonicBaseCallback);
+  ultrasonicBaseReading.setInterval(5);
+
   //infraredReading.onRun(infraredCallback);
   //infraredReading.setInterval(100);
 
@@ -415,6 +466,7 @@ void setup() {
 
   // Adds both threads to the controller
   conthrol.add(&ultrasonicReading);
+  conthrol.add(&ultrasonicBaseReading);
   //conthrol.add(&infraredReading); // & to pass the pointer to it
   conthrol.add(&ButtonReading); // & to pass the pointer to it
 }
